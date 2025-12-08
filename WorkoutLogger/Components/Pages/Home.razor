@@ -1,0 +1,693 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Log workout</PageTitle>
+
+
+<div class="container-fluid m-3">
+    <div class="row">
+        <div class="col-md-4">
+
+
+            @*Card för att välja övning som ska läggas till i listan. Samt Filtering utifrån tags på övningar *@
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2>Excercise filter</h2>
+                </div>
+                <div class="card-body mb-3">
+                    <select class="form-select" @bind="selectedExerciseId">
+                        <option>Choose exercise</option>
+                        @foreach (var exercise in excercises)
+                        {
+                            <option value="@exercise.Id">@exercise.Name</option>
+                        }
+                    </select>
+                    <div class="m-3">
+                        <h5 class="mb-3 fw-bold">Filters</h5>
+
+                        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2">
+                            @foreach (var tag in allTags)
+                            {
+                                <div class="col d-flex align-items-center">
+                                    <input class="form-check-input me-2"
+                                           type="checkbox"
+                                           checked="@selectedTags.Contains(tag)"
+                                           @onchange="(e) => FilterExcercises(tag, e)" />
+
+                                    <label class="form-check-label">
+                                        @tag
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+
+
+
+                </div>
+
+                @*Lägga till ny övning med knapp och litet formulär *@
+                <div class="row">
+                    <div class="col m-3">
+                        <button type="button" class="btn btn-secondary" @onclick="ToggleAddExcercise">@addExcerciseBtnText</button>
+                    </div>
+                    <div class="col m-3">
+                        <button type="button" class="btn btn-secondary" @onclick="ToggleEditExcercise">@editExcerciseBtnText</button>
+                    </div>
+                    <div class="col m-3">
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="DeleteExcercise">Delete selected excercise</button>
+                    </div>
+                </div>
+                @if (addingExcerciseToDb)
+                {
+                    <div class="row m-3">
+                        <div class="col">
+                            <div class="form-group> mb-3">
+                                <label class="form-label">Exercise name</label>
+                                <input type="text" @bind="excerciseName" class="form-control" placeholder="Excercise name" />
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group> mb-3">
+                                <label class="form-label>">Tags</label>
+                                <input type="text" class="form-control" @bind="tag" placeholder="Comma separated tags" />
+                            </div>
+                        </div>
+
+
+                        <div class="col">
+
+                   
+                            <div class="form-group> m-3">
+                                <button type="button" @onclick="AddExcerciseToDbAsync" class="btn btn-primary">Add Excercise to DB</button>
+                            </div>
+
+                            
+                        </div>
+                    </div>
+                }
+                @if (isUpdatingExcercise)
+                {
+                    <div class="row m-3">
+                        <div class="col">
+                            <div class="form-group> mb-3">
+                                <label class="form-label">Exercise name</label>
+                                <input type="text" @bind="excerciseName" class="form-control" placeholder="Excercise name" />
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group> mb-3">
+                                <label class="form-label>">Tags</label>
+                                <input type="text" class="form-control" @bind="tag" placeholder="Comma separated tags" />
+                            </div>
+                        </div>
+
+
+                        <div class="col">
+
+
+                            <div class="form-group> m-3">
+                                <button type="button" @onclick="UpdateExcercise" class="btn btn-warning">Update Excercise in db</button>
+                            </div>
+
+
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        @*Card för att skapa ny workout*@
+        <div class="col-md-4  ">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2>Enter workout</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Titel</label>
+                            <input type="text" class="form-control" @bind="title" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label" @bind="date">Datum</label>
+                            <input type="date" class="form-control" @bind="date" />
+                        </div>
+                        <div class="row mb-3">
+                            @if (SelectedExercise == null)
+                            {
+                                <div class="alert alert-warning text-center fw-bold">
+                                    Select an exercise from the dropdown menu on the left
+                                </div>
+                            }
+
+                            else
+                            {
+
+
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Excercise</label>
+                                        <p>@SelectedExercise.Name</p>
+                                    </div>
+                                </div>
+
+
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Sets</label>
+                                        <input type="number" @bind="SetCount" class="form-control" />
+                                    </div>
+                                </div>
+
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Reps</label>
+                                        <input type="number" @bind="RepsCount" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Vikt (Kg)</label>
+                                        <input type="number" @bind="Weight" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-success mt-4" @onclick="AddExcerciseToWorkout">Add excercise to workout</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Kommentar</label>
+                                    <input type="text" @bind="comment" class="form-control" />
+                                </div>
+
+                            }
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <table class="table">
+
+                                        <thead>
+                                            <tr>
+                                                <th>Exercise</th>
+                                                <th>Set x Reps</th>
+                                                <th>Weight (Kg)</th>
+                                                <th>Volume (Kg)</th>
+                                                <th>Comment</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var we in workoutExcercises)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">@we.ExcerciseName</td>
+                                                    <td>@we.Set x @we.Reps</td>
+                                                    <td>@we.Weight</td>
+                                                    <td>@we.ExcerciseVolume</td>
+                                                    <td>@we.Comment</td>
+                                                    <td><button type="button" @onclick="() => RemoveExcerciseFromWorkout(we)" class="btn btn-sm btn-danger">Remove from workout</button></td>
+                                                </tr>
+
+
+                                            }
+                                        </tbody>
+                                    </table>
+                                    <p><strong>Total volume:</strong> @workoutTotalVolume Kg</p>
+                                </div>
+                            </div>
+
+                            @*Om uppdatering sker ska formuläret fyllas från db*@
+                            @if (isUpdatingWorkout)
+                            {
+                                <div class="row m3">
+                                    <div class="col m-3">
+                                        <button type="button" class="btn btn-warning" @onclick="UpdateWorkout">Update workout</button>
+                                    </div>
+                                    <div class="col m-3">
+                                        <button type="button" class="btn btn-secondary" @onclick="CancelUpdate">Cancel</button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="m-3">
+                                    <button type="button" class="btn  btn-primary" @onclick="SaveWorkout">Save workout</button>
+                                </div>
+
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        @*Card för att lista all workouts i db*@
+
+        <div class="col md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2>All workouts</h2>
+                </div>
+                <div class="card-body">
+                    @foreach (var workout in workouts)
+                    {
+                        <div class="row">
+                            <div class="m-3 p-3 border col">
+                                <h4>@workout.Title</h4>
+                                <p><strong>Date:</strong> @workout.Date.ToShortDateString()</p>
+                                <p><strong>Exercises:</strong></p>
+                                <ul>
+                                    @foreach (var we in workout.Excercises)
+                                    {
+                                        <li>@we.ExcerciseName - @we.Set x @we.Reps @we.Weight Kg (Volume: @we.ExcerciseVolume Kg)</li>
+                                    }
+                                </ul>
+                                <p><strong>Total Volume:</strong> @workout.Excercises.Sum(e => e.ExcerciseVolume) Kg</p>
+                            </div>
+
+                            <div class="col d-flex flex-column justify-content-center">
+                                <a href="#" class="btn btn-sm btn-secondary m-3" @onclick="() => EditWorkout(workout.Id)">Edit workout</a>
+                                <a href="#" class="btn btn-sm btn-danger m-3" @onclick="() => DeleteWorkout(workout.Id)">Delete workout</a>
+                            </div>
+
+                        </div>
+                    }
+
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+@code {
+    [Inject]
+    public HttpClient Http { get; set; } = default!;
+    //Properties för ny workout
+    private string title { get; set; } = string.Empty;
+    private DateTime date { get; set; } = DateTime.Now;
+    private string comment { get; set; } = string.Empty;
+    private int SetCount { get; set; } = 3;
+    private int RepsCount { get; set; } = 10;
+    private double Weight { get; set; } = 0.0;
+    private List<WorkoutExcercise> workoutExcercises = new();
+    private WorkoutExcercise excercise = new();
+    //Workouts
+
+    private List<Workout> workouts { get; set; } = new();
+    private Workout? selectedWorkout = new();
+
+    //propeerties för ny exercise
+    private string excerciseName { get; set; } = string.Empty;
+    private string tag { get; set; } = string.Empty;
+    private List<string> tags { get; set; } = new();
+    private bool isUpdatingExcercise = false;
+
+
+    //Uppdatera workout
+    private bool isUpdatingWorkout = false;
+
+    //Övningar från db
+    private List<ExcerciseModel> excercises = new();
+    private List<ExcerciseModel> allExcercises = new();
+
+    //Filtrering
+    private List<string> allTags = new();
+    private bool isTagChecked = true;
+    private List<string> selectedTags = new();
+
+    //Beräknad total volym för hela workout
+    private double workoutTotalVolume => workoutExcercises.Sum(e => e.ExcerciseVolume);
+
+    //Vald övning id från dropdown
+    private string? selectedExerciseId { get; set; }
+
+    //Koppla vald övning id till en övning i listan
+    private ExcerciseModel? SelectedExercise => excercises.FirstOrDefault(e => e.Id == selectedExerciseId);
+
+    //Lägga till övning i db
+    private string addExcerciseBtnText = "Add new Excercise";
+    private bool addingExcerciseToDb = false;
+
+    private string editExcerciseBtnText = "Edit excercise";
+
+
+    //Read, Ladda övningar, workouts från db. Och tags utifrån laddade övningar
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            excercises = await Http.GetFromJsonAsync<List<ExcerciseModel>>("getexcercises") ?? new List<ExcerciseModel>();
+            workouts = await Http.GetFromJsonAsync<List<Workout>>("getworkouts") ?? new List<Workout>();
+            allTags = excercises.SelectMany(e => e.Tags).Distinct().ToList();
+            allExcercises = excercises;
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching data: {ex.Message}");
+
+        }
+
+    }
+
+    //Visa /dölj lägga till övning
+    private void ToggleAddExcercise()
+    {
+        isUpdatingExcercise = false;
+        addingExcerciseToDb = !addingExcerciseToDb;
+        if (addingExcerciseToDb)
+        {
+            addExcerciseBtnText = "Cancel";
+        }
+        else
+        {
+            addExcerciseBtnText = "Add new Excercise";
+        }
+    }
+
+    //Add excercise
+    private async Task AddExcerciseToDbAsync()
+    {
+
+        tags = tag.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        var newExcercise = new ExcerciseModel
+        {
+            Name = excerciseName,
+            Tags = tags
+        };
+        var response = await Http.PostAsJsonAsync("addexcercise", newExcercise);
+        Console.WriteLine("statuscode: " + response.StatusCode);
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Exercise added to DB");
+
+            excercises = await Http.GetFromJsonAsync<List<ExcerciseModel>>("getexcercises") ?? new List<ExcerciseModel>();
+
+            allTags = excercises.SelectMany(e => e.Tags).Distinct().ToList();
+
+            addingExcerciseToDb = false;
+
+            addExcerciseBtnText = "Add new Excercise";
+        }
+        else
+        {
+            Console.WriteLine("Failed to add exercise to DB");
+        }
+    }
+
+    private void ToggleEditExcercise()
+    {
+        addingExcerciseToDb = false;
+
+        isUpdatingExcercise = !isUpdatingExcercise;
+
+        if (isUpdatingExcercise)
+        {
+            editExcerciseBtnText = "Cancel";
+        }
+        else
+        {
+            editExcerciseBtnText = "Edit Excercise";
+        }
+
+        if (selectedExerciseId == null)
+        {
+            Console.WriteLine("No exercise selected for editing");
+            return;
+        }
+        excerciseName = SelectedExercise?.Name ?? string.Empty;
+        tag = string.Join(", ", SelectedExercise?.Tags ?? new List<string>());
+
+
+    }
+
+    //Update async excercise
+    public async Task UpdateExcercise()
+    {
+        if (selectedExerciseId == null)
+        {
+            Console.WriteLine("No exercise selected for updating");
+            return;
+        }
+
+        var result = await Http.PutAsJsonAsync($"updateexcercise/{selectedExerciseId}", new ExcerciseModel
+        {
+            Id = selectedExerciseId,
+            Name = excerciseName,
+            Tags = tag.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
+        });
+
+        if (result.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Exercise updated in DB");
+            excercises = await Http.GetFromJsonAsync<List<ExcerciseModel>>("getexcercises") ?? new List<ExcerciseModel>();
+            allTags = excercises.SelectMany(e => e.Tags).Distinct().ToList();
+            isUpdatingExcercise = false;
+            editExcerciseBtnText = "Edit Excercise";
+        }
+        else
+        {
+            Console.WriteLine("Failed to update exercise in DB");
+        }
+
+        
+    }
+
+    //Delete excercise
+    public async Task DeleteExcercise()
+    {
+        string id = selectedExerciseId ?? string.Empty;
+            
+        
+
+        if (string.IsNullOrEmpty(id))
+        {
+            Console.WriteLine("No exercise selected for deletion");
+            return;
+        }
+
+
+
+        var response = await Http.DeleteAsync($"deleteexcercise/{id}");
+
+
+
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Exercise deleted from DB");
+
+            selectedExerciseId = null;
+            selectedTags.Clear();
+  
+            await FilterExcercisesAsync();
+        }
+        else
+        {
+            Console.WriteLine("Failed to delete exercise from DB");
+        }
+    }
+
+
+    //Lägg till övning i workout listan
+    public void AddExcerciseToWorkout()
+    {
+
+        if (SelectedExercise != null)
+        {
+            var newExcercise = new WorkoutExcercise()
+            {
+
+                ExcerciseId = SelectedExercise.Id,
+                ExcerciseName = SelectedExercise.Name,
+                Set = SetCount,
+                Reps = RepsCount,
+                Weight = Weight,
+                Comment = comment
+
+
+            };
+
+            workoutExcercises.Add(newExcercise);
+        }
+
+        
+        ResetForm();
+    }
+
+    //Ta bort övning från workout listan
+    public void RemoveExcerciseFromWorkout(WorkoutExcercise we)
+    {
+        workoutExcercises.Remove(we);
+    }
+
+    //Addworkout
+    private async Task<List<Workout>> SaveWorkout()
+    {
+        var workout = new Workout
+        {
+            Title = title,
+            Date = date,
+            Excercises = workoutExcercises
+        };
+        var response = await Http.PostAsJsonAsync("addworkout", workout);
+        Console.WriteLine("statuscode: " + response.StatusCode);
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Failed to save workout");
+
+        }
+
+
+        workouts = await Http.GetFromJsonAsync<List<Workout>>("getworkouts") ?? new List<Workout>();
+
+
+        ResetForm();
+
+
+        return workouts;
+
+
+    }
+
+    //Edit workout - fyll i formuläret med vald workout
+    private void EditWorkout(string id)
+    {
+        selectedWorkout = workouts.FirstOrDefault(w => w.Id == id);
+
+        if (selectedWorkout == null)
+        {
+            Console.WriteLine("Workout not found");
+
+        }
+
+        title = workouts.FirstOrDefault(w => w.Id == id)?.Title ?? string.Empty;
+        date = workouts.FirstOrDefault(w => w.Id == id)?.Date ?? DateTime.Now;
+        workoutExcercises = workouts.FirstOrDefault(w => w.Id == id)?.Excercises ?? new List<WorkoutExcercise>();
+        comment = workouts.FirstOrDefault(c => c.Id == id)?.Excercises.FirstOrDefault()?.Comment ?? string.Empty;
+        isUpdatingWorkout = true;
+
+        return;
+    }
+
+    private void CancelUpdate()
+    {
+        ResetForm();
+        selectedWorkout = null;
+    }
+
+    //Update workout
+    private async Task UpdateWorkout()
+    {
+        if (selectedWorkout == null)
+        {
+            Console.WriteLine("No workout selected for update");
+            return;
+        }
+        selectedWorkout.Title = title;
+        selectedWorkout.Date = date;
+        selectedWorkout.Excercises = workoutExcercises;
+
+        var response = await Http.PutAsJsonAsync($"updateworkout/{selectedWorkout.Id}", selectedWorkout);
+        Console.WriteLine("responseStatusCode: " + response.StatusCode);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Workout updated");
+
+
+        }
+        else
+        {
+            Console.WriteLine("Failed to update workout");
+
+        }
+        selectedWorkout = null;
+
+        ResetForm();
+    }
+
+    //Delete workout
+    private async Task DeleteWorkout(string id)
+    {
+        ResetForm();
+        var response = await Http.DeleteAsync($"deleteworkout/{id}");
+        Console.WriteLine("responseStatusCode: " + response.StatusCode);
+        if (response.IsSuccessStatusCode)
+        {
+            var workoutToDelete = workouts.FirstOrDefault(w => w.Id == id);
+            if (workoutToDelete != null)
+            {
+                workouts.Remove(workoutToDelete);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Failed to delete workout");
+        }
+
+    }
+
+    //Toggle Filter checkboxes
+    public async Task FilterExcercises(string tag, ChangeEventArgs e)
+    {
+        isTagChecked = e.Value as bool? ?? false;
+
+        if (isTagChecked)
+        {
+            if (!selectedTags.Contains(tag))
+            {
+                selectedTags.Add(tag);
+            }
+
+        }
+        else
+        {
+            selectedTags.Remove(tag);
+        }
+        await FilterExcercisesAsync();
+        
+    }
+    private async Task FilterExcercisesAsync()
+    {
+        if (!selectedTags.Any())
+        {
+            excercises = await Http.GetFromJsonAsync<List<ExcerciseModel>>("getexcercises")
+                         ?? new List<ExcerciseModel>();
+            allTags = excercises.SelectMany(e => e.Tags).Distinct().ToList();
+            return;
+        }
+
+        //Hämtar filtrerade övningar baserat på valda tags
+        var response = await Http.PostAsJsonAsync("getexcercisesbytags", selectedTags);
+       
+        if (response.IsSuccessStatusCode)
+        {
+            excercises = await response.Content.ReadFromJsonAsync<List<ExcerciseModel>>()
+                         ?? new List<ExcerciseModel>();
+        }
+        else
+        {
+            return;
+        }
+    }
+
+
+    private void ResetForm()
+    {
+        isUpdatingWorkout = false;
+        Weight = 0.0;
+        title = string.Empty;
+        date = DateTime.Now;
+        comment = string.Empty;
+        workoutExcercises = new List<WorkoutExcercise>();
+
+    }
+}
