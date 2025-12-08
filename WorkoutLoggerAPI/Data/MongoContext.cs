@@ -15,7 +15,7 @@ namespace WorkoutLoggerAPI.Data
 
         public MongoContext(string database)
         {
-            var client = new MongoClient();
+            var client = new MongoClient(/*Connectionstring goes here*/);
             _db = client.GetDatabase(database);
         }
 
