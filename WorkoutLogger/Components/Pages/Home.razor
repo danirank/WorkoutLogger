@@ -361,6 +361,7 @@
     private void ToggleAddExcercise()
     {
         isUpdatingExcercise = false;
+        selectedExerciseId = null;
         addingExcerciseToDb = !addingExcerciseToDb;
         if (addingExcerciseToDb)
         {
@@ -409,7 +410,7 @@
 
         isUpdatingExcercise = !isUpdatingExcercise;
 
-        if (isUpdatingExcercise)
+        if (isUpdatingExcercise && selectedExerciseId != null)
         {
             editExcerciseBtnText = "Cancel";
         }
