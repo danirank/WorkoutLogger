@@ -12,8 +12,10 @@ namespace WorkoutLogger
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
-
-            builder.Services.AddScoped(ep => new HttpClient { BaseAddress = new Uri("https://localhost:7260/") });
+            //If needed, change APIBaseAdress to match API LocalHost
+            var APIBaseAdress = "https://localhost:7260/";
+            
+            builder.Services.AddScoped(ep => new HttpClient { BaseAddress = new Uri(APIBaseAdress) });
 
             var app = builder.Build();
 
